@@ -1,0 +1,58 @@
+.moduleWrapper {
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    width: 95%;
+    max-width: 400px;
+    margin: 10px auto;
+}
+
+.interactionPanel {
+    padding: 10px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
+
+
+.addressWrapper,
+.credentialItem {
+    display: flex;
+    align-items: left;
+    justify-content: space-between;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.addressWrapper {
+    background-color: #F6F6F6;
+}
+
+.credentialItem {
+    background-color: #EFEFEF;
+}
+
+.button {
+    padding: 15px 25px;
+    border-radius: 10px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    text-align: center;
+}
+
+.navButtons {
+    display: flex;
+    justify-content: space-between;
+    margin: 15px 0;
+}
+
+.icon {
+    font-size: 1.5em;
+}
