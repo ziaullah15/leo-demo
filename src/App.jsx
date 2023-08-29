@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Issuer from "./components/Issuer";
 import Holder from "./components/Holder";
 import Verifier from "./components/Verifier";
+import Request from "./components/Request";
 import { useAleoWASM } from "./aleo-wasm-hook";
 
 
@@ -14,6 +15,8 @@ function App() {
     const [dob, setDob] = useState('');
     const [expiration, setExpiration] = useState('');
     const [signature, setSignature] = useState('');
+    const [verified, setVerified] = useState(false);
+
     const signingAccount = account;
 
     const signString = (str) => {
@@ -62,7 +65,21 @@ function App() {
         });
     }
 
+    const [step, setStep] = useState(0);
+    const [result, setResult] = useState(0);
+
+
+    const advanceStep = () => {
+        setStep(prevStep => prevStep + 1);
+    };
+
+    const backStep = () => {
+      setStep(prevStep => prevStep - 1);
+    };
+
+
     async function execute() {
+
         const hello_hello_program =
           "program hello_hello.aleo;\n" +
           "\n" +
@@ -73,7 +90,7 @@ function App() {
           "    output r2 as u32.private;\n";
     
         setLoading(true);
-        const result = await postMessagePromise(worker, {
+        const response = await postMessagePromise(worker, {
           type: "ALEO_EXECUTE_PROGRAM_LOCAL",
           localProgram: hello_hello_program,
           aleoFunction: "hello",
@@ -81,25 +98,21 @@ function App() {
           privateKey: account.to_string(),
         });
         setLoading(false);
-    
-        alert(JSON.stringify(result));
+        advanceStep();
+        setResult(response);
+        setVerified(true);
+
       }
     
-
-    const [step, setStep] = useState(0);
-
-    const advanceStep = () => {
-        setStep(prevStep => prevStep + 1);
-    };
-
-    const backStep = () => {
-      setStep(prevStep => prevStep - 1);
-  };
-
     const initializeAndAdvance = () => {
         generateAccount();
         advanceStep();
     };
+
+
+
+    
+    // Continued from above
 
     let renderedComponent;
 
@@ -124,13 +137,14 @@ function App() {
                     setExpiration={setExpiration}
                     generateSignature={generateSignature}
                     loading={loading}
-                    advanceStep={advanceStep}                
+                    advanceStep={advanceStep}    
+                    setVerified={setVerified}            
                 />
             );
             break;
         case 2:
         renderedComponent = (
-            <Verifier
+            <Request
                 account={account}
                 loading={loading}
                 subject={subject}
@@ -151,10 +165,25 @@ function App() {
                     dob={dob}
                     expiration={expiration}
                     signature={signature}
+                    verified={verified}
                     execute={execute}
                     advanceStep={advanceStep}
                     backStep={backStep}
                 />
+            );
+            break;
+            case 4:
+            renderedComponent = (
+                <Verifier
+                account={account}
+                loading={loading}
+                subject={subject}
+                result={result}
+                verified={verified} 
+                execute={execute}
+                advanceStep={advanceStep}
+                backStep={backStep}
+            />
             );
             break;
         

@@ -11,32 +11,18 @@ const AddressDisplay = ({ label, value }) => (
     </div>
 );
 
-const Holder = ({
-    account, 
-    loading, 
-    dob, 
-    expiration, 
-    execute,
-    signature,
-    advanceStep,   
-    backStep,
-    issuer,
-    subject,
-}) => {
-    const fadeProps = useSpring({
-        opacity: 1,
-        from: { opacity: 0 },
-    });
-
+const Holder = ({ account, loading, dob, expiration, execute, signature, advanceStep, backStep, issuer, subject, verified }) => {
+    const fadeProps = useSpring({ opacity: 1, from: { opacity: 0 } });
     const [hasExecuted, setHasExecuted] = useState(false);
+    const [error, setError] = useState(null);
 
     const handleExecute = async () => {
         try {
             await execute();
             setHasExecuted(true);
-        } catch (error) {
-            console.error("Error executing:", error);
-            // You can set an error state here to notify the user if needed
+        } catch (err) {
+            console.error("Error executing:", err);
+            setError("An error occurred while generating the proof.");
         }
     };
 
@@ -46,12 +32,13 @@ const Holder = ({
         <div className="moduleWrapper">
             <div className="interactionPanel">
                 <h2>zPass</h2>
+                {error && <div className="error">{error}</div>}
                 <animated.div style={fadeProps}>
                     <AddressDisplay label="Issuer" value={issuer} />
                     <AddressDisplay label="Subject" value={subject} />
                     <AddressDisplay label="Expiration" value={expiration} />
-                    <AddressDisplay label="Signature" value={""} />
-                    
+                    {/* <AddressDisplay label="Signature" value={signature} /> */}
+
                     <button 
                         className="button"
                         onClick={handleExecute} 

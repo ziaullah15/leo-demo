@@ -2,32 +2,34 @@ import React, { useState } from 'react';
 import { animated, useSpring } from 'react-spring';
 import '../Verifier.css';
 
-function Verifier({ account, loading, subject, result, expiration, backStep, advanceStep, verified}) { 
+function Request({ account, loading, subject, result, expiration, backStep, advanceStep }) { 
+    const [displayedResponse, setDisplayedResponse] = useState('');
 
     const fadeProps = useSpring({
         opacity: 1,
         from: { opacity: 0 },
     });
 
-    const isVerified = () => {
-        if (verified) {
-            return "Verified";
-        } else {
-            return "Not Verified";
-        }
-    }
+    
 
-   
+    const isButtonDisabled = !account || loading || !subject || !expiration;
+
     return (
         <animated.div className="moduleWrapper" style={fadeProps}>
             <div className="interactionPanel">
                 <h2 className="cardTitle">zPass Verification</h2>
                 <div className="verifierContent">
-                    <div>
-                        <b> Verification Result: </b>
-                        <span className="address">{isVerified()}</span>
-                    </div>
+                    <button 
+                        className="button"
+                        onClick={advanceStep}
+                        aria-label="Verify with zPass" 
+                        disabled={isButtonDisabled}
+                    >
+                        {loading ? 'Verifying...' : 'Verify with zPass'}
+                    </button>
+                    
                 </div>
+                
             </div>
             <br />
            
@@ -39,4 +41,4 @@ function Verifier({ account, loading, subject, result, expiration, backStep, adv
     );
 }
 
-export default Verifier;
+export default Request;
