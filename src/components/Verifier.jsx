@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { animated, useSpring } from 'react-spring';
 import '../Verifier.css';
 
-function Verifier({ account, loading, subject, result, expiration, backStep, advanceStep, verified}) { 
-
+function Verifier({ account, loading, subject, result, expiration, backStep, advanceStep, verified }) { 
     const fadeProps = useSpring({
         opacity: 1,
         from: { opacity: 0 },

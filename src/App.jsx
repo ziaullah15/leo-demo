@@ -1,201 +1,114 @@
 import { useEffect, useState } from "react";
+import { useAleoWASM } from "./aleo-wasm-hook";
 import Issuer from "./components/Issuer";
 import Holder from "./components/Holder";
 import Verifier from "./components/Verifier";
 import Request from "./components/Request";
-import { useAleoWASM } from "./aleo-wasm-hook";
 
+const HELLO_PROGRAM = `
+    program hello_hello.aleo;
+    function hello:
+    input r0 as u32.public;
+    input r1 as u32.private;
+    add r0 r1 into r2;
+    output r2 as u32.private;
+`;
 
 function App() {
     const aleo = useAleoWASM();
-    const [account, setAccount] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [subject, setSubject] = useState('');
-    const [issuer, setIssuer] = useState('');
-    const [dob, setDob] = useState('');
-    const [expiration, setExpiration] = useState('');
-    const [signature, setSignature] = useState('');
-    const [verified, setVerified] = useState(false);
 
-    const signingAccount = account;
+    const [state, setState] = useState({
+        account: null,
+        loading: false,
+        subject: '',
+        issuer: '',
+        dob: '',
+        expiration: '',
+        signature: '',
+        verified: false,
+        step: 0,
+        result: 0
+    });
+
+    const [worker, setWorker] = useState(null);
+
+    const setIssuer = (issuerValue) => {
+        setState(prev => ({ ...prev, issuer: issuerValue }));
+    };
+
+    const setSubject = (subjectValue) => { 
+        setState(prev => ({ ...prev, subject: subjectValue }));
+    };
+
+    const setExpiration = (expirationValue) => {
+        setState(prev => ({ ...prev, expiration: expirationValue }));
+    };
+
+
+    useEffect(() => {
+        if (worker === null) {
+            const spawnedWorker = spawnWorker();
+            setWorker(spawnedWorker);
+            return () => spawnedWorker.terminate();
+        }
+    }, []);
 
     const signString = (str) => {
-        if (!str || !signingAccount) return;
-        return signingAccount.sign(str);
+        if (!str || !state.account) return;
+        return state.account.sign(str);
     };
 
     const generateAccount = () => {
-        setAccount(new aleo.PrivateKey());
+        setState(prev => ({ ...prev, account: new aleo.PrivateKey() }));
     };
 
     const generateSignature = () => {
-        const str = `${subject}${issuer}${dob}${expiration}` + `2023field` + `21field`;
+        const str = `${state.subject}${state.issuer}${state.dob}${state.expiration}2023field21field`;
         const generatedSignature = signString(str);
-        setSignature(generatedSignature.to_string());
+        setState(prev => ({ ...prev, signature: generatedSignature.to_string() }));
     };
-    
-    const [worker, setWorker] = useState(null);
 
-    useEffect(() => {
-      if (worker === null) {
-        const spawnedWorker = spawnWorker();
-        setWorker(spawnedWorker);
-        return () => {
-          spawnedWorker.terminate();
-        };
-      }
-    }, []);
-  
-    function spawnWorker() {
-      return new Worker(new URL("workers/worker.js", import.meta.url), {
-        type: "module",
-      });
-    }
-  
-    
-    function postMessagePromise(worker, message) {
-        return new Promise((resolve, reject) => {
-        worker.onmessage = (event) => {
-            resolve(event.data);
-        };
-        worker.onerror = (error) => {
-            reject(error);
-        };
+    const spawnWorker = () => new Worker(new URL("workers/worker.js", import.meta.url), { type: "module" });
+
+    const postMessagePromise = (worker, message) => new Promise((resolve, reject) => {
+        worker.onmessage = (event) => resolve(event.data);
+        worker.onerror = (error) => reject(error);
         worker.postMessage(message);
-        });
-    }
+    });
 
-    const [step, setStep] = useState(0);
-    const [result, setResult] = useState(0);
+    const advanceStep = () => setState(prev => ({ ...prev, step: prev.step + 1 }));
+    const backStep = () => setState(prev => ({ ...prev, step: prev.step - 1 }));
 
-
-    const advanceStep = () => {
-        setStep(prevStep => prevStep + 1);
-    };
-
-    const backStep = () => {
-      setStep(prevStep => prevStep - 1);
-    };
-
-
-    async function execute() {
-
-        const hello_hello_program =
-          "program hello_hello.aleo;\n" +
-          "\n" +
-          "function hello:\n" +
-          "    input r0 as u32.public;\n" +
-          "    input r1 as u32.private;\n" +
-          "    add r0 r1 into r2;\n" +
-          "    output r2 as u32.private;\n";
-    
-        setLoading(true);
+    const execute = async () => {
+        setState(prev => ({ ...prev, loading: true }));
         const response = await postMessagePromise(worker, {
-          type: "ALEO_EXECUTE_PROGRAM_LOCAL",
-          localProgram: hello_hello_program,
-          aleoFunction: "hello",
-          inputs: ["5u32", "5u32"],
-          privateKey: account.to_string(),
+            type: "ALEO_EXECUTE_PROGRAM_LOCAL",
+            localProgram: HELLO_PROGRAM,
+            aleoFunction: "hello",
+            inputs: ["5u32", "5u32"],
+            privateKey: state.account.to_string(),
         });
-        setLoading(false);
+        setState(prev => ({ ...prev, loading: false, result: response, verified: true }));
         advanceStep();
-        setResult(response);
-        setVerified(true);
+    };
 
-      }
-    
     const initializeAndAdvance = () => {
         generateAccount();
         advanceStep();
     };
 
-
-
-    
-    // Continued from above
-
-    let renderedComponent;
-
-    switch (step) {
-        case 0:
-            renderedComponent = (
-                <div className="center">
-                    <button className="button" onClick={initializeAndAdvance}>
-                        Initialize zPass
-                    </button>
-                </div>
-            );
-            break;
-        case 1:
-            renderedComponent = (
-                <Issuer
-                    account={account}
-                    generateAccount={generateAccount}
-                    setSubject={setSubject}
-                    setIssuer={setIssuer}
-                    setDob={setDob}
-                    setExpiration={setExpiration}
-                    generateSignature={generateSignature}
-                    loading={loading}
-                    advanceStep={advanceStep}    
-                    setVerified={setVerified}            
-                />
-            );
-            break;
-        case 2:
-        renderedComponent = (
-            <Request
-                account={account}
-                loading={loading}
-                subject={subject}
-                dob={dob}
-                expiration={expiration}
-                advanceStep={advanceStep}
-                backStep={backStep}
-            />
-        );
-        break;
-        case 3:
-            renderedComponent = (
-                <Holder
-                    account={account}
-                    loading={loading}
-                    issuer={issuer}
-                    subject={subject}
-                    dob={dob}
-                    expiration={expiration}
-                    signature={signature}
-                    verified={verified}
-                    execute={execute}
-                    advanceStep={advanceStep}
-                    backStep={backStep}
-                />
-            );
-            break;
-            case 4:
-            renderedComponent = (
-                <Verifier
-                account={account}
-                loading={loading}
-                subject={subject}
-                result={result}
-                verified={verified} 
-                execute={execute}
-                advanceStep={advanceStep}
-                backStep={backStep}
-            />
-            );
-            break;
-        
-        default:
-            renderedComponent = <div>Completed</div>;
-            break;
-    }
+    const componentMap = {
+        0: <div className="center"><button className="button" onClick={initializeAndAdvance}>Initialize zPass</button></div>,
+        1: <Issuer {...state} generateAccount={generateAccount} generateSignature={generateSignature} advanceStep={advanceStep} setIssuer={setIssuer} setExpiration={setExpiration} setSubject={setSubject} />,
+        2: <Request {...state} advanceStep={advanceStep} backStep={backStep} />,
+        3: <Holder {...state} execute={execute} advanceStep={advanceStep} backStep={backStep} />,
+        4: <Verifier {...state} execute={execute} advanceStep={advanceStep} backStep={backStep} />
+    };
 
     return (
         <div className="container">
             <h1 className="centered-title">zPass Flow</h1>
-            {renderedComponent}
+            {componentMap[state.step] || <div>Completed</div>}
         </div>
     );
 }

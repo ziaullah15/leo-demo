@@ -2,15 +2,11 @@ import React, { useState } from 'react';
 import { animated, useSpring } from 'react-spring';
 import '../Verifier.css';
 
-function Request({ account, loading, subject, result, expiration, backStep, advanceStep }) { 
-    const [displayedResponse, setDisplayedResponse] = useState('');
-
+function Request({ account, loading, subject, expiration, backStep, advanceStep }) { 
     const fadeProps = useSpring({
         opacity: 1,
         from: { opacity: 0 },
     });
-
-    
 
     const isButtonDisabled = !account || loading || !subject || !expiration;
 

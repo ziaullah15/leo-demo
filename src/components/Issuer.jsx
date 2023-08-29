@@ -14,12 +14,11 @@ const credentialData = {
     expiration: "01/01/2030"
 };
 
-const Issuer = ({ generateSignature, advanceStep, setIssuer, setSubject, setExpiration }) => {
-    const handleIssue = async () => {
-        setIssuer(credentialData.issuer);
-        setSubject(credentialData.subject);
-        setExpiration(credentialData.expiration);
-        await generateSignature();
+const Issuer = ({ advanceStep, setIssuer, setSubject, setExpiration }) => {
+    const handleIssue = () => {
+        setIssuer("zPass");
+        setSubject("Aleo Fan");
+        setExpiration("01/01/2030");
         advanceStep();
     };
 
